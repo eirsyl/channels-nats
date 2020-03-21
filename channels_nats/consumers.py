@@ -15,7 +15,7 @@ class AsyncNATSConsumer(AsyncConsumer):  # type: ignore
 
         await self.receive(
             subject=message["subject"],
-            bytes_data=message["bytes"],
+            bytes_data=message["bytes_data"],
             reply=message.get("reply"),
         )
 
@@ -37,6 +37,12 @@ class AsyncNATSConsumer(AsyncConsumer):  # type: ignore
     # Methods to be implemented by the consumer classes
     #
 
+    async def nats_connect(self, message: typing.Dict) -> None:
+        pass
+
+    async def nats_disconnect(self, message: typing.Dict) -> None:
+        pass
+
     async def receive(
         self, subject: str, bytes_data: bytes, reply: typing.Optional[str] = None
     ) -> None:
@@ -52,7 +58,7 @@ class NATSConsumer(SyncConsumer):  # type: ignore
 
         self.receive(
             subject=message["subject"],
-            bytes_data=message["bytes"],
+            bytes_data=message["bytes_data"],
             reply=message.get("reply"),
         )
 
@@ -71,6 +77,12 @@ class NATSConsumer(SyncConsumer):  # type: ignore
     #
     # Methods to be implemented by the consumer classes
     #
+
+    def nats_connect(self, message: typing.Dict) -> None:
+        pass
+
+    def nats_disconnect(self, message: typing.Dict) -> None:
+        pass
 
     def receive(
         self, subject: str, bytes_data: bytes, reply: typing.Optional[str] = None
