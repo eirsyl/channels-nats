@@ -1,3 +1,4 @@
+# type: ignore
 import asyncio
 import traceback
 import logging
@@ -58,7 +59,7 @@ class BaseServer:
         """
         Looks for exeptions raised in the application
         """
-        for application_instance in self.subscriptions:
+        for application_instance in self.subscriptions.values():
 
             try:
                 exception = application_instance.future.exception()

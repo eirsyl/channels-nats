@@ -1,27 +1,28 @@
 import logging
 import functools
+import typing
 import argparse
 import sys
 import asyncio
-from signal import SIGINT, SIGTERM
 
 from asgiref.compatibility import is_double_callable
 from .utils import import_by_path
-from .client import ChannelsNATSClient
+from .client import Client
+from .access import AccessLogGenerator
 
 logger = logging.getLogger(__name__)
 
 
 class ASGI3Middleware:
-    def __init__(self, app):
+    def __init__(self, app):  # type: ignore
         self.app = app
 
-    def __call__(self, scope):
+    def __call__(self, scope):  # type: ignore
         scope.setdefault("asgi", {})
         scope["asgi"]["version"] = "3.0"
         return functools.partial(self.asgi, scope=scope)
 
-    async def asgi(self, receive, send, scope):
+    async def asgi(self, receive, send, scope):  # type: ignore
         await self.app(scope, receive, send)
 
 
@@ -29,9 +30,9 @@ class CommandLineInterface:
 
     description = "Django Channels NATS interface server"
 
-    client_class = ChannelsNATSClient
+    client_class = Client
 
-    def __init__(self):
+    def __init__(self):  # type: ignore
         self.parser = argparse.ArgumentParser(description=self.description)
         self.parser.add_argument(
             "application",
@@ -82,13 +83,13 @@ class CommandLineInterface:
         )
 
     @classmethod
-    def entrypoint(cls):
+    def entrypoint(cls):  # type: ignore
         """
         Main entrypoint for external starts.
         """
-        cls().run(sys.argv[1:])
+        cls().run(sys.argv[1:])  # type: ignore
 
-    def run(self, args):
+    def run(self, args):  # type: ignore
         """
         Pass in raw argument list and it will decode them
         and run the server.
@@ -107,8 +108,6 @@ class CommandLineInterface:
             format="%(asctime)-15s %(levelname)-8s %(message)s",
         )
 
-        access_log_stream = sys.stdout
-
         # Import application
         sys.path.insert(0, ".")
         application = import_by_path(args.application)
@@ -118,18 +117,22 @@ class CommandLineInterface:
             asgi_protocol = "asgi2" if is_double_callable(application) else "asgi3"
 
         if asgi_protocol == "asgi3":
-            application = ASGI3Middleware(application)
+            application = ASGI3Middleware(application)  # type: ignore
+
+        access_log_stream = sys.stdout
+        loop = asyncio.get_event_loop()
 
         # Start the server
         logger.info("Starting client")
 
         client = self.client_class(
             application=application,
+            subjects=args.subject,
             verbosity=args.verbosity,
             client_name=args.client_name,
+            action_logger=AccessLogGenerator(access_log_stream),
+            loop=loop,
         )
-
-        loop = client.loop
 
         if not all([args.application, args.nats, args.client_name]):
             raise ValueError(
@@ -137,12 +140,12 @@ class CommandLineInterface:
                 "Please add them via the command line."
             )
 
-        logger.info("Connecting to NATS Server {}".format(args.nats))
-
-        loop.run_until_complete(client.connect(args.nats, args.subject, args.queue))
+        loop.run_until_complete(
+            client.connect(servers=args.nats, client_name=args.client_name)
+        )
 
         try:
-            client.start()
+            client.run()
         except KeyboardInterrupt:
             # Drain nats connection
             loop.run_until_complete(client.disconnect())

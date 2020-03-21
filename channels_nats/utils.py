@@ -1,7 +1,8 @@
 import importlib
+import typing
 
 
-def import_by_path(path):
+def import_by_path(path: str) -> typing.Any:
     """
     Given a dotted/colon path, like project.module:ClassName.callable,
     returns the object at the end of the path.
