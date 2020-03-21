@@ -1,2 +1,4 @@
 .venv/
 dist/
+.python-version
+*.egg-info

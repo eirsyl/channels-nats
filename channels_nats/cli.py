@@ -54,6 +54,13 @@ class CommandLineInterface:
             default=[">"],
         )
         self.parser.add_argument(
+            "-q",
+            "--queue",
+            dest="queue",
+            help="The queue name used to make sure only one worker consume each message",
+            default="channels-nats",
+        )
+        self.parser.add_argument(
             "-v",
             "--verbosity",
             type=int,
@@ -70,8 +77,8 @@ class CommandLineInterface:
         self.parser.add_argument(
             "--client-name",
             dest="client_name",
-            help="specify which value should be passed to response header Server attribute",
-            default="ChannelsNATS",
+            help="The client name used to identify the worker",
+            default="channels-nats",
         )
 
     @classmethod
@@ -132,7 +139,7 @@ class CommandLineInterface:
 
         logger.info("Connecting to NATS Server {}".format(args.nats))
 
-        loop.run_until_complete(client.connect(args.nats, args.subject))
+        loop.run_until_complete(client.connect(args.nats, args.subject, args.queue))
 
         try:
             client.start()

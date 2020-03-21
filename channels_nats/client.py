@@ -15,7 +15,12 @@ class ChannelsNATSClient(BaseServer):
         self.nc = NATS()
 
     async def connect(
-        self, nats: typing.List[str], subject: typing.List[str], *args, **kwargs
+        self,
+        nats: typing.List[str],
+        subject: typing.List[str],
+        queue: str,
+        *args,
+        **kwargs
     ):
         """
         Instantiates the connection to the server. Also creates the requisite
@@ -43,7 +48,9 @@ class ChannelsNATSClient(BaseServer):
             application_instance = self.create_application(
                 scope=dict(subject=sub, **scope), from_consumer=self.from_consumer(sub)
             )
-            subscription = await self.nc.subscribe(sub, cb=self.from_nats(sub))
+            subscription = await self.nc.subscribe(
+                sub, cb=self.from_nats(sub), queue=queue
+            )
             application_instance.subscription = subscription
 
             self.subscriptions[sub] = application_instance
