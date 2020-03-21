@@ -17,20 +17,41 @@ class AsyncNATSConsumer(AsyncConsumer):  # type: ignore
             subject=message["subject"],
             bytes_data=message["bytes_data"],
             reply=message.get("reply"),
+            is_reply=message.get("is_reply", False),
         )
 
     async def send(self, subject: str, bytes_data: bytes) -> None:
         """
-        Sends a command to the NATS Server.  Message should be of the format:
+        Sends a message to the NATS Server. Message should be of the format:
             {
                 'type': 'nats.send',
                 'subject': '<SUBJECT>',
-                'bytes': '<BYTES_DATA>',
+                'bytes_data': '<BYTES_DATA>',
             }
         """
 
         await super().send(
-            {"type": "nats.send", "subject": subject, "bytes": bytes_data}
+            {"type": "nats.send", "subject": subject, "bytes_data": bytes_data}
+        )
+
+    async def request(self, subject: str, bytes_data: bytes, timeout: int = 1) -> None:
+        """
+        Sends a request message to the NATS Server.  Message should be of the format:
+            {
+                'type': 'nats.request',
+                'subject': '<SUBJECT>',
+                'bytes_data': '<BYTES_DATA>',
+                'timeout': '<TIMEOUT>',
+            }
+        """
+
+        await super().send(
+            {
+                "type": "nats.request",
+                "subject": subject,
+                "bytes_data": bytes_data,
+                "timeout": timeout,
+            }
         )
 
     #
@@ -44,7 +65,11 @@ class AsyncNATSConsumer(AsyncConsumer):  # type: ignore
         pass
 
     async def receive(
-        self, subject: str, bytes_data: bytes, reply: typing.Optional[str] = None
+        self,
+        subject: str,
+        bytes_data: bytes,
+        reply: typing.Optional[str],
+        is_reply: bool,
     ) -> None:
         pass
 
@@ -60,19 +85,42 @@ class NATSConsumer(SyncConsumer):  # type: ignore
             subject=message["subject"],
             bytes_data=message["bytes_data"],
             reply=message.get("reply"),
+            is_reply=message.get("is_reply", False),
         )
 
     def send(self, subject: str, bytes_data: bytes) -> None:
         """
-        Sends a command to the NATS Server.  Message should be of the format:
+        Sends a message to the NATS Server.  Message should be of the format:
             {
                 'type': 'nats.send',
                 'subject': '<SUBJECT>',
-                'bytes': '<BYTES_DATA>',
+                'bytes_data': '<BYTES_DATA>',
             }
         """
 
-        super().send({"type": "nats.send", "subject": subject, "bytes": bytes_data})
+        super().send(
+            {"type": "nats.send", "subject": subject, "bytes_data": bytes_data}
+        )
+
+    def request(self, subject: str, bytes_data: bytes, timeout: int = 1) -> None:
+        """
+        Sends a request message to the NATS Server.  Message should be of the format:
+            {
+                'type': 'nats.request',
+                'subject': '<SUBJECT>',
+                'bytes_data': '<BYTES_DATA>',
+                'timeout': '<TIMEOUT>',
+            }
+        """
+
+        super().send(
+            {
+                "type": "nats.request",
+                "subject": subject,
+                "bytes_data": bytes_data,
+                "timeout": timeout,
+            }
+        )
 
     #
     # Methods to be implemented by the consumer classes
@@ -85,7 +133,11 @@ class NATSConsumer(SyncConsumer):  # type: ignore
         pass
 
     def receive(
-        self, subject: str, bytes_data: bytes, reply: typing.Optional[str] = None
+        self,
+        subject: str,
+        bytes_data: bytes,
+        reply: typing.Optional[str],
+        is_reply: bool,
     ) -> None:
         pass
 
