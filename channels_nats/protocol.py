@@ -54,10 +54,6 @@ class NATSProtocol:
         # Send the disconnect event to the ASGI layer
         await self.handle_disconnect()
 
-        # Drain application queue
-        if self.application_queue:
-            await self.application_queue.join()
-
         # Unsubscribe from the NATS topic
         await self.client.nats.unsubscribe(self.sid)
         self.client.protocol_disconnected(self)
